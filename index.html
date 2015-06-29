@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+
+    <title>kataria</title>
+
+    <style>
+body
+{
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+    </style>
+  </head>
+
+  <body>
+    <audio src="run.mp3" autoplay loop></audio>
+
+    <script src="https://cdn.rawgit.com/GoodBoyDigital/pixi.js/master/bin/pixi.min.js"></script>
+    
+    <script>
+function random(min, max) 
+{
+  return Math.floor(Math.random() * (max - min + 1)) + min; 
+};
+
+function rgbToHex(r, g, b)
+{
+  return '0x' + Math.abs(r).toString(16) + Math.abs(g).toString(16) + Math.abs(b).toString(16);
+};
+
+function addKatarias(remove)
+{
+  if (remove)
+  {
+    for (var i = 0; i <= 5; i++)
+    {
+      stage.removeChildAt(stage.children.length - 1 - i);
+    };
+  };
+
+  for (var i = 0; i <= 5; i++)
+  {
+    var kataria = new PIXI.Sprite(PIXI.Texture.fromImage('kataria.png'));
+    
+    kataria.width = 64;
+    kataria.height = 128;
+
+    kataria.position.x = random(0, window.w);
+    kataria.position.y = random(0, window.h);
+    kataria.anchor.x = kataria.anchor.y = 0.5;
+    kataria.rotation = -Math.PI / 4;
+    
+    stage.addChild(kataria);
+  };
+
+console.log(stage.children.length);
+};
+
+window.w = window.innerWidth;
+window.h = window.innerHeight;
+
+var time = 0;
+var now = Date.now();
+
+var renderer = new PIXI.WebGLRenderer(window.w, window.h);
+document.body.appendChild(renderer.view);
+
+var stage = new PIXI.Container();
+
+// Kataria
+var kataria = new PIXI.Sprite(PIXI.Texture.fromImage('kataria.png'));
+
+kataria.position.x = window.w / 2;
+kataria.position.y = window.h / 2;
+kataria.anchor.x = kataria.anchor.y = 0.5;
+kataria.rotation = -Math.PI / 4;
+
+stage.addChild(kataria);
+
+addKatarias(false);
+addKatarias(false);
+
+// Background
+var bg = [random(0, 255), random(0, 255), random(0, 255)];
+renderer.backgroundColor = rgbToHex(bg[0], bg[1], bg[2]);
+
+// Filters
+var pixel = new PIXI.filters.PixelateFilter();
+var rgb = new PIXI.filters.RGBSplitFilter();
+var gray = new PIXI.filters.GrayFilter();
+var noise = new PIXI.filters.NoiseFilter();
+
+// Color Matrix (Mat Groves: http://www.goodboydigital.com/pixijs/examples/15/)
+var colorMatrix = [1,0,0,0,
+                   0,1,0,0,
+                   0,0,1,0,
+                   0,0,0,1];
+
+var cm = new PIXI.filters.ColorMatrixFilter();
+
+stage.filters = [pixel, rgb, cm, gray, noise];
+
+// Start
+animate();
+
+function animate()
+{
+  requestAnimationFrame(animate);
+
+  if (Date.now() - now > 7500)
+    time += 0.1;
+  else if (Date.now() - now > 15000)
+    time += 0.001;
+  else
+    time += 1;
+
+  // Background
+  if (Math.random() < 0.00025)
+    bg = [random(0, 255), random(0, 255), random(0, 255)];
+
+  for (var i = 0; i <= bg.length - 1; i++)
+  {
+    if (bg[i] <= 0)
+      bg[i] = 255;
+    
+    bg[i] -= 1;
+  };
+
+  renderer.backgroundColor = rgbToHex(bg[0], bg[1], bg[2]);
+
+  // Filters
+  colorMatrix[1] = Math.sin(time) * 3 / 2;
+  colorMatrix[2] = Math.cos(time) / 2;
+  colorMatrix[3] = Math.cos(time) * 1.5 / 2;
+  colorMatrix[4] = Math.sin(time / 3) * 2 / 2;
+  colorMatrix[5] = Math.sin(time / 2) / 2;
+  colorMatrix[6] = Math.sin(time / 4) / 2;
+  cm.matrix = colorMatrix;
+
+  gray.gray = Math.sin(time);
+
+  pixel.size.x = Math.sin(time) * Math.random() * 75;
+  pixel.size.y = Math.cos(time) * Math.random() * 75;
+
+  // Kataria
+  if (Math.random() < 0.001)
+    addKatarias(true);
+
+  for (var i = 0; i <= stage.children.length - 1; i++)
+  {
+    stage.children[i].rotation += Math.sin(time) / 10;
+    
+    if (Math.random() < 0.001)
+    {
+      stage.children[i].position.x = window.w / 2;
+      stage.children[i].position.y = window.h / 2;
+    };
+
+    stage.children[i].position.x += random(-10, 10);
+    stage.children[i].position.y += random(-10, 10);
+
+    stage.children[i].scale.x += Math.sin(time / 20) / 120;
+    stage.children[i].scale.y += Math.sin(time / 20) / 120;
+  };
+
+  renderer.render(stage);
+}
+    </script>
+  </body>
+</html>
